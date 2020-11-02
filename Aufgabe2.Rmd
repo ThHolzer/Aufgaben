@@ -2,11 +2,8 @@
 title: "R Notebook"
 output: html_notebook
 ---
-Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
 
-Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? (muss nicht unbedingt mit einer linearen Regression analysiert werden)
-
-Bitte committen und pushen Sie Ihr Notebook auf GitHub und schicken mir die URL des Repositories.
+Aufgabe 2
 
 Laden von tidyverse
 ```{r}
