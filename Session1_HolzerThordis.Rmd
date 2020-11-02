@@ -1,0 +1,86 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+Laden von tidyverse
+```{r}
+library(tidyverse)
+```
+```{r}
+BX_Book_Ratings <- read_delim("BX-Book-Ratings.csv", 
+     ";", escape_double = FALSE, trim_ws = TRUE)
+BX_Users <- read_delim("BX-Users.csv", ";", 
+     escape_double = FALSE, col_types = cols(Age = col_number()), 
+     trim_ws = TRUE)
+BX_Books <- read_delim("BX-Books.csv", ";", 
+     escape_double = FALSE, trim_ws = TRUE)
+```
+
+Säubern der Daten, aus ihrem Beispiel-Dokument entnommen.
+
+```{r}
+books <- BX_Books %>%
+  select(ISBN,`Book-Title`,`Book-Author`,`Year-Of-Publication`,Publisher)
+```
+
+
+```{r}
+ratings <- BX_Book_Ratings %>%
+  left_join(BX_Books)
+```
+Einmal alles anzeigen lassen, jedoch schonmal etwas geordnet.
+Es fällt auf, dass viel ISBNs so nicht sein können und diese zwar eine Bewertung von 10 haben, jedoch nur einmal Bewertet wurden.
+```{r}
+ratings %>%
+  group_by(ISBN) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(Durchschnittsbewertung))
+```
+Die Bücher mit einer Bewertung von 10 lagere ich aus, um mit denen dann weiter zu arbeiten. Die Idee stammt von Miriam Stenger, diese auszulagern.
+```{r}
+Bestwertung <- ratings %>%
+  filter(`Book-Rating` > 9)
+```
+
+## Welche Bücher sind am besten bewertet?
+Hier habe ich, dann anstatt nach ISBN zu gruppieren, mir das ganze nach dem Buchtitel anzeigen lassen.
+```{r}
+Bestwertung%>%
+  group_by(`Book-Title`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(AnzahlBewertungen))
+```
+## Sollte die Anzahl der Bewertungen auch mit reinspielen? 
+Wenn die Anzahl der Bewertungen mit reinspielen, fallen ganz viele raus die eine Hohe         Bewertung haben diese jedoch nur einmal. Nimmt man diese jedoch raus ist jedoch die Frage, ab wann man meint, dass es genügend Bewertungen sind um eine klare Aussage zu erhalten.
+```{r}
+Bestwertung%>%
+  group_by(`Book-Title`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  filter(`AnzahlBewertungen` > 10) %>%
+  arrange(desc(Durchschnittsbewertung))
+```
+## Welche Autoren sind am besten bewertet?
+Das ist der Beste Versuch, die Autoren anzeigen zu lassen mit der besten Bewertung, dass Problem hier bei ist jedoch, dass diese nicht immer gleich geschrieben wurden und mir nicht bekannt ist, wie ich das bereinigen kann um diese dopplungen zu vermeiden. Ich habe hier auch wieder die Tabelle ratings verwendet.
+```{r}
+ratings%>%
+  group_by(`Book-Author`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(AnzahlBewertungen))
+```
+## Welcher Verlag hat die besten Bücher?
+Hier kann man davon ausgehen, dass es das selbe Problem ist, wie bei den Autoren. Das heißt, wenn der Verlag untschiedlich geschrieben wurde wird er häufiger vorkommen. Auch hier verwende ich wieder die Tabelle ratings, um eine möglichst vollständige Bewertung zu erlangen.
+```{r}
+ratings%>%
+  group_by(`Publisher`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(AnzahlBewertungen))
+```
+

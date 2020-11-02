@@ -1,0 +1,121 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
+
+Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? (muss nicht unbedingt mit einer linearen Regression analysiert werden)
+
+Bitte committen und pushen Sie Ihr Notebook auf GitHub und schicken mir die URL des Repositories.
+
+Laden von tidyverse
+```{r}
+library(tidyverse)
+```
+```{r}
+BX_Book_Ratings <- read_delim("BX-Book-Ratings.csv", 
+     ";", escape_double = FALSE, trim_ws = TRUE)
+BX_Users <- read_delim("BX-Users.csv", ";", 
+     escape_double = FALSE, col_types = cols(Age = col_number()), 
+     trim_ws = TRUE)
+BX_Books <- read_delim("BX-Books.csv", ";", 
+     escape_double = FALSE, trim_ws = TRUE)
+```
+
+Säubern der Daten, aus ihrem Beispiel-Dokument entnommen.
+
+```{r}
+books <- BX_Books %>%
+  select(ISBN,`Book-Title`,`Book-Author`,`Year-Of-Publication`,Publisher)
+```
+
+
+```{r}
+ratings <- BX_Book_Ratings %>%
+  left_join(BX_Books)
+```
+
+Der Gedanke hier hinter ist die Tabellen etwas zu bereinigen und einige Sonderzeichen aus den Namen zu entfernen.
+
+Mir ist aber auch in der letzten Aufgabe aufgefallen, dass manchmal Autoren oder verlage unterschiedlich geschrieben wurden, jedoch nur eine Person oder Institution gemeint ist. Gibt es da eine Möglichkeit diese zusammen zufassen? Ich habe keine gefunden.
+```{r}
+ratings <- ratings %>%
+  filter(!is.na(`Book-Title`))%>%
+  filter(!is.na(`Publisher`))%>%
+  filter(`Book-Title` != "//")%>%
+  filter(`Book-Title` != "\\")%>%
+  filter(`Book-Title` != "--")%>%
+  filter(`Book-Title` != "'") %>%
+  filter(`Book-Rating`> 0)
+
+```
+
+Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
+
+
+Um diese Aufgabe zu erledigen muss eine lineare Regression erstellt werden, zwischen den Werten der Anzahl der Bücher eines Publishers und der Ratings dieser Bücher. Hierfür würde ich gerne die Anzahl der Veröffentlichungen, ein Wert der entsteht, wenn man die Bücher unter einem Publisher zusammenzählt mit den rating werten aus der vorherigen Aufgabe vergleichen im chunk von Zeile 54-59 habe ich schonmal diesen Wert Veröffentlichung erstellt. Die Frage, die sich mir nun stellt ist wie schaffe ich es diese erstellte Tabelle als tablle zu speichern und somit die Daten nachnutzbar zu machen. Sodass ich am ende zwei numerische werte habe, die ich über die lineare Regeressions formel auszuwerten.
+
+```{r}
+ratings_per_publisher <- ratings %>%
+  group_by(Publisher) %>%
+  summarize(Ratings_Publisher = n()) %>%
+  arrange(desc(Ratings_Publisher))
+```
+
+```{r}
+head(ratings_per_publisher)
+```
+```{r}
+books_per_publisher <- books %>%
+  filter(!is.na(`Book-Title`)) %>%
+  group_by(Publisher) %>%
+  summarize(Bücher_Publisher = n()) %>%
+  arrange(desc(Bücher_Publisher))
+```
+```{r}
+head(books_per_publisher)
+```
+```{r}
+ratings_und_books<- ratings_per_publisher %>%
+  inner_join(books_per_publisher)
+```
+```{r}
+fit <- lm(ratings_und_books$Ratings_Publisher~ratings_und_books$Bücher_Publisher)
+```
+```{r}
+plot(ratings_und_books$Ratings_Publisher~ratings_und_books$Bücher_Publisher)
+abline(fit)
+```
+```{r}
+summary(fit)
+```
+Ich denke nicht, dass lineare Abhängigkeit gibt.
+
+Teil 2
+Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? (muss nicht unbedingt mit einer linearen Regression analysiert werden)
+
+Um diese Frage zu beantworten habe ich die relevanten Daten aus der Tabelle Beziehungen gezogen und zusammen dargestell. Da es Bücher gab bei denen das Publikations Jahr als 0 angegeben wurde habe ich auch die Filterfunktion genutzt um diese Bücher raus zu filtern
+```{r}
+Beziehung <- ratings%>%
+  select(`Book-Title`, Publisher, `Book-Rating`, `Year-Of-Publication`)
+
+```
+
+```{r}
+Beziehung %>%
+  group_by(`Book-Title`)%>%
+  summarise(AnzahlTitel = n())%>%
+  arrange(desc(AnzahlTitel))
+```
+
+
+```{r}
+Beziehung %>%
+  group_by(`Book-Title`,`Year-Of-Publication`,`Book-Rating`)%>%
+  summarise(AnzahlBewertungen = n()) %>%
+  filter(`Year-Of-Publication` > 0)%>%
+  arrange(`Year-Of-Publication`)
+```
+
+Wie in der Tabelle zu erkennen ist haben ältere Bücher nicht unbedingt mehr Ratings oder ein besseres Rating.
+
