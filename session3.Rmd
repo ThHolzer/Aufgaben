@@ -1,0 +1,106 @@
+
+---
+title: "Beispiel-Notebook EDA / Data Science 3. Session"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r}
+library(tidyverse)
+library(arules)
+library(arulesViz)
+library(stringr)
+```
+
+
+```{r}
+all <- read_csv("all.csv")
+```
+
+
+##Hausaufgabe:
+
+- Erstellen Sie eine Analyse, bei der nicht die Bücher, sondern die Autoren in den Transaktionen enthalten sind
+- Fällt Ihnen etwas in der Datenqualität auf?
+- Wie könnte man das mit regulären Ausdrücken beheben?
+- Wie kann man nun noch sicherstellen, dass nur die Autoren weiterempfohlen werden, deren Bücher man auch (mehrheitlich) gut fand?
+- Welche anderen Features wären sinnvoll?
+
+
+Ich habe hier die Autoren in Verbindung zu den User-IDs gesetzt, um zu schauen, ob es verbindungen gibt. Also ob User, wenn sie den einen Autor lesen auch den andern interssant finde. Das Problem auf das ich hier gestoßen bin, ist das dadurch dass die Autoren häufig in mehreren schreibweisen in der Tabelle entalten sind, sie teilweise mit sich selbst gematcht werden. Wodurch die Ergebnisse natürlich fehlerhaft sind.Eine Möglichkeit dieses Problem wenigstens teilweise zu beheben ist, wenn man die Groß- und Kleinschreibung vereinheitlicht, also zum Beispiel alles in kleinschreibung hat. Ein weiter Schritt wäre es alle Sonderzeichen bzw. Satzzeichen zu entfernen.
+
+Erster versuch die Autoren in Verbindung zu den User-IDs zu setzten.
+```{r}
+i <- split(all$`Book-Author`,all$`User-ID`)
+txn <- as(i, "transactions")
+basket_rules <- apriori(txn, parameter = list(sup = 0.0015, conf = 0.0001, minlen=2, target="rules"))
+```
+```{r}
+myRules_Direct <- as(basket_rules, "data.frame")
+basket_rules_hi <- head(basket_rules, by ="lift",100)
+head(myRules_Direct, 100)
+```
+
+
+```{r}
+plot(basket_rules_hi, method="graph", main="Author")
+```
+
+
+```{r}
+plot(basket_rules_hi, method="graph", main="Author", engine="interactive")
+```
+
+Daten reinigen
+Um die Daten zu reinigen habe ich das versucht:
+```{r}
+#all%>%
+#  filter(!is.na(`Book-Author`))%>%
+#  filter(`Book-Author` != "//")%>%
+#  filter(`Book-Author` != "\\")%>%
+#  filter(`Book-Author` != "--")%>%
+#  filter(`Book-Author` != ".")%>%
+#  filter(`Book-Author` != "'")%>%
+#  filter(`Book-Author` != ";")
+```
+Diese Audrücke hab ich aus der zweiten Aufgabe entnommen und erweitert.
+Allerdings musste ich feststellen, dass es nicht funktioniert hat, zumindestens wurde es mir nicht in der Tabelle angezeit, dass die jeweiligen Zeichen entfernt wurden. Daher hab ich es in Kommentare gesetzt uns auf Stackoverflow gesucht.
+Da wurde eine ähnliche Frage gestellt was das entfernen von Sonderzeichen angeht. Der Code:
+```{r}
+#all <- all
+#  x <- "a1~!@#$%^&*(){}_+:\"<>?,./;'[]-=" #or whatever
+#  gsub("[[:punct:]]", " ", x)
+```
+Das funktionierte auch nicht. Bin mir zwar nicht sicher warum aber ich denke es liegt daran, dass es nicht in der Tabelle funktioniert oder so. Aus der Help funktion bin ich auch nicht schlauer geworten. Ich habe weiter auf Stckoverflow gesucht aber keine anwendbare Lösung gefunden. Wahrscheinlich gibt es eine aber ich find sie nicht. 
+
+```{r}
+#gsub("[^[:punct:]]", " ", all)
+```
+
+```{r}
+#str_replace_all(all, "[aeiou]", toupper)
+```
+
+Funktioniert nicht, da all kein Vektor ist nehme ich mal an, aber wie man ne Table oder Spalte in nen Vektor umwandelt weiß ich auch nicht und ich finde nichts, was ich verstehe.
+
+- Wie kann man nun noch sicherstellen, dass nur die Autoren weiterempfohlen werden, deren Bücher man auch (mehrheitlich) gut fand?
+
+```{r}
+i <- split(all$`Book-Author`,all$`User-ID`)
+txn <- as(i, "transactions")
+basket_rules <- apriori(txn, parameter = list(sup = 0.0015, conf = 0.0001, minlen=4, target="rules"))
+```
+
+
+```{r}
+myRules_Direct <- as(basket_rules, "data.frame")
+basket_rules_hi <- head(basket_rules, by ="lift",100)
+head(myRules_Direct, 100)
+```
+
+```{r}
+plot(basket_rules_hi, method="graph", main="Author", engine="interactive")
+```

@@ -11,6 +11,7 @@ Laden von tidyverse
 ```{r}
 library(tidyverse)
 ```
+Laden der CSV-Dateien
 ```{r}
 BX_Book_Ratings <- read_delim("BX-Book-Ratings.csv", 
      ";", escape_double = FALSE, trim_ws = TRUE)
@@ -21,7 +22,7 @@ BX_Books <- read_delim("BX-Books.csv", ";",
      escape_double = FALSE, trim_ws = TRUE)
 ```
 
-Säubern der Daten, aus ihrem Beispiel-Dokument entnommen.
+Säubern der Daten, aus Ihrem Beispiel-Dokument entnommen.
 
 ```{r}
 books <- BX_Books %>%
