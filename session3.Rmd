@@ -88,6 +88,8 @@ Funktioniert nicht, da all kein Vektor ist nehme ich mal an, aber wie man ne Tab
 
 - Wie kann man nun noch sicherstellen, dass nur die Autoren weiterempfohlen werden, deren Bücher man auch (mehrheitlich) gut fand?
 
+Wenn man die Minimum Länge der Verbindungen erhöht, sollte man theoretisch auch nur die angezeibt bekommen deren Bücher man mehrheitlich gut fand.
+
 ```{r}
 i <- split(all$`Book-Author`,all$`User-ID`)
 txn <- as(i, "transactions")
