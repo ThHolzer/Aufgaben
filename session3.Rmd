@@ -12,7 +12,6 @@ output:
 library(tidyverse)
 library(arules)
 library(arulesViz)
-library(stringr)
 ```
 
 
@@ -74,21 +73,19 @@ Da wurde eine ähnliche Frage gestellt was das entfernen von Sonderzeichen angeh
 #  x <- "a1~!@#$%^&*(){}_+:\"<>?,./;'[]-=" #or whatever
 #  gsub("[[:punct:]]", " ", x)
 ```
-Das funktionierte auch nicht. Bin mir zwar nicht sicher warum aber ich denke es liegt daran, dass es nicht in der Tabelle funktioniert oder so. Aus der Help funktion bin ich auch nicht schlauer geworten. Ich habe weiter auf Stckoverflow gesucht aber keine anwendbare Lösung gefunden. Wahrscheinlich gibt es eine aber ich find sie nicht. 
+Das funktionierte auch nicht. Bin mir zwar nicht sicher warum aber ich denke es liegt daran, dass es nicht in der Tabelle funktioniert oder so. Aus der Help Funktion bin ich auch nicht schlauer geworten. Ich habe weiter auf Stockoverflow gesucht aber keine anwendbare Lösung gefunden. Wahrscheinlich gibt es eine aber ich find sie nicht. 
 
 ```{r}
 #gsub("[^[:punct:]]", " ", all)
 ```
 
-```{r}
-#str_replace_all(all, "[aeiou]", toupper)
-```
+
 
 Funktioniert nicht, da all kein Vektor ist nehme ich mal an, aber wie man ne Table oder Spalte in nen Vektor umwandelt weiß ich auch nicht und ich finde nichts, was ich verstehe.
 
 - Wie kann man nun noch sicherstellen, dass nur die Autoren weiterempfohlen werden, deren Bücher man auch (mehrheitlich) gut fand?
 
-Wenn man die Minimum Länge der Verbindungen erhöht, sollte man theoretisch auch nur die angezeibt bekommen deren Bücher man mehrheitlich gut fand.
+Wenn man die Minimum Länge der Verbindungen erhöht, sollte man theoretisch auch nur die angezeigt bekommen, deren Bücher man mehrheitlich gut fand.
 
 ```{r}
 i <- split(all$`Book-Author`,all$`User-ID`)
@@ -106,3 +103,7 @@ head(myRules_Direct, 100)
 ```{r}
 plot(basket_rules_hi, method="graph", main="Author", engine="interactive")
 ```
+
+- Welche anderen Features wären sinnvoll?
+
+Man könnte zum Beispiel auch noch die Book-Rating einbeziehen, da die noch weiter Anhaltspunkte für Empfehlungen geben.
