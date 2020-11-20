@@ -1,0 +1,149 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Laden der gebrauchten Bibliotheken
+```{r}
+library(tidyverse)
+library(e1071)
+library(caret)
+library(pROC)
+```
+
+Laden der Datei
+```{r}
+titanic <- read_delim("titanic.csv", ";", 
+    escape_double = FALSE, trim_ws = TRUE)
+View(titanic)
+```
+# Bitte erstellen Sie ein Notebook mit weiteren Features (Alter, Geschlecht und Klasse sind als Beispiel in meinem Notebook auf GitHub)
+Ich habe mich dafür entschieden, das Feature embarked mit einzubeziehen. Es erscheint mir interessant zu schauen, der Einstiegsort einen Einfluss auf das Überleben hatte. Da zum Beispiel South Hampton traditionell eher eine Gegend ist in der besser betuchte Herrschaften lebten.
+```{r}
+(titanic.df <- titanic %>%
+  select(survived,pclass,age,sex,embarked))
+```
+Hierfür musste ich dann die Buchstaben in Zahlen umwandeln, damit diese auch weiter verarbeitet werden können.
+```{r}
+titanic.df <- titanic.df %>%
+  mutate(sex = ifelse(sex == "female", 1, 0)) %>%
+  mutate(age = as.numeric(str_replace(age,",",".")))%>%
+  mutate (embarked = ifelse(embarked == "S",1, ifelse(embarked == "C",2, ifelse(embarked == "Q",3,0))))
+```
+
+```{r}
+titanic.df
+```
+
+
+```{r}
+titanic.df <- na.omit(titanic.df)
+```
+
+```{r}
+set.seed(137)
+inTrain <- createDataPartition(
+  y = titanic.df$survived,
+  p = .8,
+  list = FALSE)
+training <- titanic.df[ inTrain,]
+testing  <- titanic.df[-inTrain,]
+```
+
+```{r}
+model <- svm(survived ~ ., data = training)
+summary(model)
+pred <- predict(model, testing[,-1], probability = FALSE)
+```
+
+```{r}
+(test.results <- cbind(pred, testing))
+```
+
+```{r}
+test.results2 <- test.results %>%
+  mutate(pred = ifelse(pred>=0.5,1,0))
+table(test.results2$pred, testing$survived)
+```
+
+
+```{r}
+pROC_obj <- roc(test.results$survived, test.results$pred,
+            smoothed = TRUE,
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+```
+
+# Naive Bayes
+
+```{r}
+my_training <- training %>%
+  mutate(survived = as.factor(survived))%>%
+  mutate(sex = as.factor(sex))%>%
+  mutate(pclass = as.factor(pclass)) %>%
+  mutate(age = as.factor(ifelse(age < 10, "child", "adult"))) %>%
+  mutate(embarked = as.factor(embarked))
+model <- naiveBayes(survived ~ ., data = my_training)
+model
+```
+
+```{r}
+my_testing <- testing %>%
+  mutate(sex = as.factor(sex)) %>%
+  mutate(pclass = as.factor(pclass))%>%
+  mutate(age = as.factor(age))%>%
+  mutate(embarked = as.factor(embarked))
+pred <- predict(model, my_testing)
+table(pred, my_testing$survived)
+```
+
+
+```{r}
+(test.results <- cbind(pred, my_testing))
+```
+
+```{r}
+test.results <- test.results %>%
+  mutate(pred = as.numeric(pred))
+pROC_obj <- roc(as.numeric(as.character(test.results$survived)), test.results$pred,
+            smoothed = TRUE,
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+```
+# Decision Tree
+
+```{r}
+library(rpart)
+library(rpart.plot)
+tree<- rpart(survived~., data = training, method = 'class')
+rpart.plot(tree)
+```
+```{r}
+dt_results <- predict(tree, testing[,-1], type = 'prob')
+head(model.results.dt <- cbind(testing,dt_results),500)
+```
+```{r}
+test.results2 <- test.results %>%
+  mutate(pred = ifelse(pred>=0.5,1,0))
+table(test.results2$pred, testing$survived)
+```
+
+
+```{r}
+pROC_obj <- roc(model.results.dt$survived,model.results.dt$`1`,
+            smoothed = TRUE,
+            # arguments for ci
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+```
+
+# Was sind die Unterschiede in der Performance der Algorithmen?
+# Finden Sie Erklärungen dafür.
+Der SVM Algorithmus bezieht alle Variablen mit ein und berechnet darauf basierend, die Überlebenswahrscheinlichkeit.
+Der Naives Bayes Algorithmus berechnet auf basierend auf jedem einzelnen Feature die Wahrscheinlichkeit des Überlebens.
+Beim Decision Tree wird basierend auf einem vorherig analysierten Feature weiter gerechnet.
+Deshalb ist der Algorithmen auch unterschiedlich, da sie das Ergebnis auf unterschiedliche Weise erreichen.
