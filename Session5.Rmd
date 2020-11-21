@@ -1,0 +1,203 @@
+---
+title: "Beispiel-Notebook EDA / Data Science 5. Session"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(caret)
+```
+
+```{r}
+(age_grades <- data.frame(age = c(22,22,21,23,27,27,26,20), grades = c(1,3,5,1,5,3,4,1)))
+```
+
+```{r}
+(age_grades.dist <- dist(age_grades, method="euclidean"))
+```
+```{r}
+age_grades.hc <- hclust(age_grades.dist, method = "complete")
+plot(age_grades.hc)
+```
+
+
+
+```{r}
+age_grades.hc <- hclust(age_grades.dist, method = "complete")
+plot(age_grades.hc)
+groups <- cutree(age_grades.hc, k=3) 
+rect.hclust(age_grades.hc, k=3, border="red")
+```
+
+```{r}
+age_grades %>%
+  mutate(cluster = groups)
+```
+
+```{r}
+age_grades.scaled <- as.data.frame(scale(age_grades))
+```
+
+
+```{r}
+(age_grades.dist <- dist(age_grades.scaled, method="euclidean"))
+age_grades.hc <- hclust(age_grades.dist, method = "complete")
+plot(age_grades.hc)
+groups <- cutree(age_grades.hc, k=3) 
+rect.hclust(age_grades.hc, k=3, border="red")
+```
+
+```{r}
+age_grades %>%
+  mutate(cluster = groups)
+```
+#  Wein
+
+```{r}
+wine_data <- read.table("https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data", sep=",")
+wine = wine_data[,-1] 
+```
+
+```{r}
+wine.scaled <- as.data.frame(scale(wine))
+```
+
+
+```{r}
+wss <- (nrow(wine.scaled)-1)*sum(apply(wine.scaled,2,var))
+  for (i in 2:10) wss[i] <- sum(kmeans(wine.scaled,
+                                       centers=i)$withinss)
+plot(1:10, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+```
+
+
+```{r}
+wine.dist <- dist(wine.scaled, method="euclidean")
+wine.hc <- hclust(wine.dist, method = "ward.D2")
+plot(wine.hc)
+groups <- cutree(wine.hc, k=3) 
+rect.hclust(wine.hc, k=3, border="red")
+```
+
+```{r}
+wine %>%
+  mutate(cluster = groups) %>%
+  left_join(wine_data) %>%
+  select(cluster,V1)
+```
+
+
+
+
+
+# K Means Clustering
+
+
+
+
+```{r}
+k.means.fit <- kmeans(wine.scaled, 3) 
+```
+
+```{r}
+k.means.fit$size
+```
+
+```{r}
+clusplot(wine, k.means.fit$cluster, color=TRUE, shade=TRUE,
+labels=4, lines=0, main="K-means cluster plot")
+```
+
+
+```{r}
+table(wine_data$V1,k.means.fit$cluster)
+```
+
+
+# Hausaufgabe
+```{r}
+all <- read_csv("all.csv")
+```
+
+```{r}
+users_books <- all %>%
+  group_by(`Book-Title`) %>%
+  mutate(no_of_books = n()) %>%
+  filter(no_of_books > 49) %>%
+  filter(`Book-Rating` > 9) %>%
+  select(`User-ID`, `Book-Title`)
+  
+```
+
+
+```{r}
+users_books <- users_books %>%
+  unique()
+books_wide <- users_books %>%
+  mutate(i = 1) %>%
+  spread(`Book-Title`,i,fill=0)
+```
+
+
+
+Versuchen Sie die Leser aus dem Buch-Datenset zu clustern: Welche Bücher gehören in welches Cluster?
+
+
+```{r}
+wss <- (nrow(books_wide)-1)*sum(apply(books_wide,2,var))
+  for (i in 2:10) wss[i] <- sum(kmeans(books_wide,
+                                       centers=i)$withinss)
+plot(1:10, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+```
+
+# K Means Clustering
+
+```{r}
+k.means.fit <- kmeans(books_wide, 3) 
+```
+
+```{r}
+k.means.fit$size
+```
+
+```{r}
+clusplot(books_wide, k.means.fit$cluster, color=TRUE, shade=TRUE,
+labels=4, lines=0, main="K-means cluster plot")
+```
+
+
+```{r}
+table(books_wide$"1984",k.means.fit$cluster)
+```
+```{r}
+result <- as.data.frame(cbind(books_wide$`User-ID`, k.means.fit$cluster))
+```
+
+# Anzeigen lassen Wer und Wlches Buch in welchem Cluster ist
+
+```{r}
+result <- result %>%
+  full_join(users_books, by = c("V1" = "User-ID"))
+```
+
+
+```{r}
+result %>%
+  filter(`V2`==1)
+```
+
+```{r}
+result %>%
+  filter(`V2`==2)
+```
+```{r}
+result %>%
+  filter(`V2`==3)
+```
